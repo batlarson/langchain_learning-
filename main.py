@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import os
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 load_dotenv()
 
@@ -16,7 +16,9 @@ model = ChatGoogleGenerativeAI(
     request_timeout=30
 )
 
-historial = []
+historial = [
+    SystemMessage(content="Eres un asesor financiero experto en dividendos e inversión en bolsa. Respondes en español de forma concisa y útil.")
+]
 
 
 while True:
