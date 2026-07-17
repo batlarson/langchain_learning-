@@ -4,8 +4,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 load_dotenv()
 
@@ -30,16 +29,26 @@ retriever = vectorstore.as_retriever()
 # 4. Crear el chain de RAG
 model = ChatGoogleGenerativeAI(model="gemini-3.5-flash", api_key=api_key)
 
-prompt = ChatPromptTemplate.from_messages([
-    ("system", "Responde basándote SOLO en el contexto proporcionado. Si no encuentras la respuesta, di que no tienes esa información.\n\nContexto: {contexto}"),
-    ("human", "{pregunta}")
-])
 
-chain = (
-    {"contexto": retriever, "pregunta": RunnablePassthrough()}
-    | prompt
-    | model
-)
+historial = [
+    SystemMessage(content="Eres un asesor financiero experto en dividendos e inversión en bolsa. Respondes en español de forma concisa y útil.")
+]
 
-respuesta = chain.invoke("Qué es la estrategia DGI y cuáles de mis activos la siguen?")
-print(respuesta.content[0]['text'])
+
+while True:
+    pregunta = input("Tú: ")
+    if pregunta.lower() == "salir":
+        break
+    
+    # Buscar contexto relevante
+    docs = retriever.invoke(pregunta)
+    contexto = "\n".join([doc.page_content for doc in docs])
+    
+    # Añadir al historial con contexto
+    mensaje_con_contexto = f"Contexto: {contexto}\n\nPregunta: {pregunta}"
+    historial.append(HumanMessage(content=mensaje_con_contexto))
+    
+    respuesta = model.invoke(historial)
+    historial.append(AIMessage(content=respuesta.content))
+    
+    print(f"IA: {respuesta.content[0]['text']}\n")
