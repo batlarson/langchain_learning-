@@ -12,8 +12,11 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
 # 1. Cargar el documento
-loader = TextLoader("datos_portfolio.txt", encoding="utf-8")
-documentos = loader.load()
+loader1 = TextLoader("datos_portfolio.txt", encoding="utf-8")
+loader2 = TextLoader("datos_acciones.txt", encoding="utf-8")
+loader3 = TextLoader("datos_estrategia.txt", encoding="utf-8")
+
+documentos = loader1.load() + loader2.load() + loader3.load()
 
 # 2. Dividir en trozos
 splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=50)
@@ -38,5 +41,5 @@ chain = (
     | model
 )
 
-respuesta = chain.invoke("Cuántos dividendos quiero ganar?")
+respuesta = chain.invoke("Qué es la estrategia DGI y cuáles de mis activos la siguen?")
 print(respuesta.content[0]['text'])

@@ -10,11 +10,11 @@ api_key = os.getenv("GEMINI_API_KEY")
 model = ChatGoogleGenerativeAI(model="gemini-3.5-flash", api_key=api_key)
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "Eres un asesor financiero experto en {tema}. Responde en español de forma concisa."),
-    ("human", "{pregunta}")
+    ("system", "Eres un asesor financiero. Responde siempre en {idioma}."),
+    ("human", "Dame un análisis financiero sobre {ticker}")
 ])
 
 chain = prompt | model 
 
-respuesta = chain.invoke({"tema": "dividendos", "pregunta": "Qué es el YOC?"})
+respuesta = chain.invoke({"ticker": "ABBV", "idioma": "inglés"})
 print(respuesta.content[0]['text'])

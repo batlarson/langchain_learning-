@@ -23,8 +23,15 @@ def obtener_dividendo(ticker: str) -> str:
     dividendo = yf.Ticker(ticker).info.get('dividendRate', 'No disponible')
     return f"El dividendo anual de {ticker} es {dividendo}$"
 
-tools = [obtener_precio, obtener_dividendo]
+@tool
+def calcular_yoc(ticker: str, pmc: float) -> str:
+    """Calcula el YOC de una acción dado su ticker y precio medio de compra."""
+    dividendo = obtener_dividendo(ticker)
+    yoc = (dividendo/pmc)*100
+    return f'El YOC de {ticker} en tu cartera es de {yoc}%'
+
+tools = [obtener_precio, obtener_dividendo, calcular_yoc]
 agent = create_agent(model, tools, system_prompt="Eres un asesor financiero. Responde en español.")
 
-respuesta = agent.invoke({"messages": [("human", "Cuál es el precio y el dividendo de KO?")]})
+respuesta = agent.invoke({"messages": [("human", "Cuál es el YOC de MAIN si compré a 40$")]})
 print(respuesta["messages"][-1].content[0]['text'])
