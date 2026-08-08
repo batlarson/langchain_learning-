@@ -3,35 +3,50 @@ import os
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.tools import tool
 from langchain.agents import create_agent
+from decimal import Decimal
 
 load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
 model = ChatGoogleGenerativeAI(model="gemini-3.5-flash", api_key=api_key)
 
+def _obtener_precio(ticker: str) -> float:
+    import yfinance as yf
+    return yf.Ticker(ticker).info.get("currentPrice", 0.0)
+
+def _obtener_dividendo(ticker: str) -> float:
+    import yfinance as yf
+    return yf.Ticker(ticker).info.get("dividendRate", 0.0)
+
 @tool
 def obtener_precio(ticker: str) -> str:
     """Obtiene el precio actual de una acción dado su ticker."""
-    import yfinance as yf
-    precio = yf.Ticker(ticker).info.get('currentPrice', 'No disponible')
+    precio = _obtener_precio(ticker)
     return f"El precio actual de {ticker} es {precio}$"
 
 @tool
 def obtener_dividendo(ticker: str) -> str:
     """Obtiene el dividendo anual de una acción dado su ticker."""
-    import yfinance as yf
-    dividendo = yf.Ticker(ticker).info.get('dividendRate', 'No disponible')
+    dividendo = _obtener_dividendo(ticker)
     return f"El dividendo anual de {ticker} es {dividendo}$"
 
 @tool
 def calcular_yoc(ticker: str, pmc: float) -> str:
     """Calcula el YOC de una acción dado su ticker y precio medio de compra."""
-    dividendo = obtener_dividendo(ticker)
+    dividendo = _obtener_dividendo(ticker)
     yoc = (dividendo/pmc)*100
     return f'El YOC de {ticker} en tu cartera es de {yoc}%'
 
-tools = [obtener_precio, obtener_dividendo, calcular_yoc]
+@tool
+def calcular_inversion(ticker: str, dinero: float) -> str:
+    """Calcula cuantas acciones puedes comprar con cierta cantidad de dinero ."""
+    precio = _obtener_precio(ticker)
+    cantidad = precio/dinero
+    
+    return f'Con tu dinero puedes comprar {cantidad} acciones'
+
+tools = [obtener_precio, obtener_dividendo, calcular_yoc, calcular_inversion]
 agent = create_agent(model, tools, system_prompt="Eres un asesor financiero. Responde en español.")
 
-respuesta = agent.invoke({"messages": [("human", "Cuál es el YOC de MAIN si compré a 40$")]})
+respuesta = agent.invoke({"messages": [("human", "Cuántas acciones de KO puedo comprar con 500 dólares?")]})
 print(respuesta["messages"][-1].content[0]['text'])
