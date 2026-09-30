@@ -11,7 +11,7 @@ if not api_key:
     raise RuntimeError("Falta GEMINI_API_KEY en el archivo .env")
 
 model = ChatGoogleGenerativeAI(
-    model="gemini-3.5-flash", 
+    model="gemini-3.5-flash-lite", 
     api_key=api_key,
     request_timeout=30
 )
@@ -27,7 +27,8 @@ while True:
         break
     
     historial.append(HumanMessage(content=pregunta))
-    respuesta = model.invoke(historial)
-    historial.append(AIMessage(content=respuesta.content))
-    
-    print(f"IA: {respuesta.content[0]['text']}\n")
+    recientes = historial[1:][-6:]
+    respuesta = model.invoke(historial[:1] + recientes)
+    historial.append(respuesta)
+
+    print(f"IA: {respuesta.text}")
