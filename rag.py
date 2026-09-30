@@ -47,55 +47,55 @@ prompt = ChatPromptTemplate([
     ("human", "{pregunta}")
 ])
 
-prompt_reformular = ChatPromptTemplate([
-    ("system", "Dada la conversación y la última pregunta, reescríbela para que se entienda sin la conversación. No la respondas, solo reescríbela. Si ya se entiende sola, devuélvela igual"),
-    MessagesPlaceholder("historial"),
-    ("human", "{pregunta}")
-])
+# prompt_reformular = ChatPromptTemplate([
+#     ("system", "Dada la conversación y la última pregunta, reescríbela para que se entienda sin la conversación. No la respondas, solo reescríbela. Si ya se entiende sola, devuélvela igual"),
+#     MessagesPlaceholder("historial"),
+#     ("human", "{pregunta}")
+# ])
 
 chain = prompt | model | StrOutputParser()
 # chain_reformular = prompt_reformular | model | StrOutputParser()
 
-
-while True:
-    pregunta = input("Tú: ")
-    if pregunta.lower() == "salir":
-        break
-    
-    # if len(historial) > 0:
-    #     pregunta_busqueda = chain_reformular.invoke({"historial": historial[-6:], "pregunta": pregunta})
-    # else:
-    #     pregunta_busqueda = pregunta
-
-    # print(repr(pregunta_busqueda))
-
-    docs = None
-
-    for intento in range(3):
-        try:
-            docs = retriever.invoke(pregunta)
+if __name__ == "__main__":
+    while True:
+        pregunta = input("Tú: ")
+        if pregunta.lower() == "salir":
             break
+        
+        # if len(historial) > 0:
+        #     pregunta_busqueda = chain_reformular.invoke({"historial": historial[-6:], "pregunta": pregunta})
+        # else:
+        #     pregunta_busqueda = pregunta
 
+        # print(repr(pregunta_busqueda))
+
+        docs = None
+
+        for intento in range(3):
+            try:
+                docs = retriever.invoke(pregunta)
+                break
+
+            except Exception as e:
+                print(f"Intento {intento + 1} fallido: {e}")
+                time.sleep(1)
+
+        if docs is None:                   # fallaron los 3
+            print("Ha habido un error, inténtalo de nuevo")
+            continue
+
+
+        try:
+            for doc in docs:
+                print(doc.page_content, "|", doc.metadata["fuente"])
+            contexto = "\n".join([doc.page_content for doc in docs])
+                
+                
+            respuesta = chain.invoke({"pregunta": pregunta, "contexto": contexto, "historial": historial[-6:]})
+            historial.append(HumanMessage(content=pregunta))
+            historial.append(AIMessage(content=respuesta))
         except Exception as e:
-            print(f"Intento {intento + 1} fallido: {e}")
-            time.sleep(1)
-
-    if docs is None:                   # fallaron los 3
-        print("Ha habido un error, inténtalo de nuevo")
-        continue
-
-
-    try:
-        for doc in docs:
-            print(doc.page_content, "|", doc.metadata["fuente"])
-        contexto = "\n".join([doc.page_content for doc in docs])
-            
-            
-        respuesta = chain.invoke({"pregunta": pregunta, "contexto": contexto, "historial": historial[-6:]})
-        historial.append(HumanMessage(content=pregunta))
-        historial.append(AIMessage(content=respuesta))
-    except Exception as e:
-        print(f"Ha habido un error: {e}")
-        continue
-    
-    print(respuesta)
+            print(f"Ha habido un error: {e}")
+            continue
+        
+        print(respuesta)
