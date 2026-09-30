@@ -54,7 +54,7 @@ prompt_reformular = ChatPromptTemplate([
 ])
 
 chain = prompt | model | StrOutputParser()
-chain_reformular = prompt_reformular | model | StrOutputParser()
+# chain_reformular = prompt_reformular | model | StrOutputParser()
 
 
 while True:
